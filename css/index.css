@@ -1,0 +1,55 @@
+/* Root index page styles */
+
+nav {
+  grid-row: span 4;
+}
+
+
+.watch-list {
+  display: grid;
+  grid-template-columns: max-content max-content max-content 1fr;
+  column-gap: 1rem;
+  font-size: 0.7rem;
+  line-height: 2;
+  align-items: baseline;
+}
+
+.watch-row {
+  display: contents;
+}
+
+.watch-title { color: #888; }
+.watch-label { color: #555; }
+
+.mood-text {
+  color: var(--off-color);
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.mood-quote {
+  color: #555;
+}
+
+.about-text {
+  font-size: 0.7rem;
+  line-height: 1.8;
+  color: #888;
+}
+
+.interests-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-items: baseline;
+  gap: 0.3rem 0;
+  color: #888;
+}
+
+.interest-tag {
+  letter-spacing: 0.04em;
+}
+
+.interest-tag:hover {
+  color: #5fd7f5;
+}

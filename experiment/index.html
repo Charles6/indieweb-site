@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POCKET DIMENSION // EXPERIMENT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet" type="text/css" media="all">
+  <link href="style.css" rel="stylesheet" type="text/css" media="all">
+</head>
+
+<body>
+  <canvas id="matrix-canvas"></canvas>
+  <div class="crt-overlay"></div>
+
+  <div class="wrapper">
+    <header class="noise">
+      <h1
+        class="glitch neon-pulse"
+        data-text="EXPERIMENT_01 // DUNGEON.EXE"
+      >EXPERIMENT_01 // DUNGEON.EXE</h1>
+      <a class="chromatic" href="../">&lt; BACK TO ROOT</a>
+    </header>
+
+    <div class="main-row">
+      <div class="game-panel">
+        <div id="stats">
+          HP: <span id="hp">20/20</span> &nbsp;|&nbsp;
+          FLOOR: <span id="floor-count">1</span> &nbsp;|&nbsp;
+          KILLS: <span id="kills">0</span><br>
+          INTEGRITY: <span id="integrity-bar">█████░░░░░</span>
+        </div>
+        <pre id="game-map"></pre>
+        <div id="log">SYSTEM READY. USE ARROW KEYS TO NAVIGATE.</div>
+      </div>
+
+      <div class="help-panel hologram">
+        <div><span>ARROWS</span> &nbsp;move</div>
+        <div><span class="help-stairs">&gt;</span> &nbsp;descend stairs</div>
+        <div><span class="help-player">@</span> &nbsp;you</div>
+        <div><span class="help-enemy">E</span> &nbsp;enemy</div>
+        <div><span class="help-medpack">*</span> &nbsp;medpack</div>
+        <div><span class="help-fragment">§</span> &nbsp;fragment</div>
+        <div><span class="help-secret">Ω</span> &nbsp;secret</div>
+        <div><span>R</span> &nbsp;restart</div>
+      </div>
+
+      <div class="story-panel noise" id="story-panel">
+        <div class="story-header">// TRANSMISSION_LOG</div>
+        <div id="story-chapters"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../code/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initMatrixRain();
+      triggerRandomGlitch();
+    });
+  </script>
+  <script src="rogue.js"></script>
+</body>
+
+</html>

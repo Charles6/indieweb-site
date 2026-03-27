@@ -1,61 +1,113 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NETWORK_VOOID // INDIE_WEB</title>
-    <link href="style.css" rel="stylesheet" type="text/css" media="all">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POCKET DIMENSION</title>
+  <link href="css/style.css" rel="stylesheet" type="text/css" media="all">
+  <link href="css/index.css" rel="stylesheet" type="text/css" media="all">
 </head>
-<body>
 
-    <div class="bento-container">
-        <header class="card header">
-            <h1>PROTOCOL_WIRED // USER: ANON_07</h1>
-            <p class="status-bar">LOC: NEO-TOKYO // STATUS: <span class="blink">SYNCING...</span></p>
-        </header>
+<body data-log-path="logs/log.json">
+  <!-- Matrix Rain Background -->
+  <canvas id="matrix-canvas"></canvas>
 
-        <nav class="card nav">
-            <h2>DIRECTORY</h2>
-            <a href="#">> LOGS</a>
-            <a href="#">> DATA_CELL</a>
-            <a href="#">> WEB_RING</a>
-            <a href="#">> GUESTBOOK</a>
-            <a href="#">> MANIFESTO</a>
-            <div style="margin-top: 50px; border-top: 1px solid #32ff32; padding-top: 10px;">
-                <p style="font-size: 0.6rem;">VISITORS: 000421</p>
-            </div>
-        </nav>
+  <!-- CRT Monitor Effects -->
+  <div class="crt-overlay"></div>
 
-        <main class="card main-content">
-            <h2>LATEST_TRANSMISSION</h2>
-            <p>The Wired is not just a medium for communication and the transfer of information. It is the real world. Do you understand? Everything is connected.</p>
-            <br>
-            <p>Currently researching the "Bento UI" movement in the indie web. It provides a logical container for chaotic data. Much like the Ghost in the Shell—a rigid vessel for a fluid soul.</p>
-            <p style="margin-top: 20px; color: #88ff88;">[READ MORE...]</p>
-        </main>
+  <div class="bento-container">
+    <header class="card noise">
+      <h1
+        class="glitch neon-pulse"
+        data-text="PROTOCOL_WIRED // USER: pocketPerson"
+      >
+        PROTOCOL_WIRED // USER: pocketPerson
+      </h1>
+      <p class="status-bar">
+        LOC: NEO-KYOTO // STATUS: <span class="blink">SYNCING...</span>
+      </p>
+      <div class="timezone-class" id="timezone-container">
+        <!-- Timezones will be dynamically inserted here -->
+      </div>
+    </header>
 
-        <div class="card small-box">
-            <h2>SYSTEM</h2>
-            <p style="font-size: 0.8rem;">CPU: 98%<br>MEM: stable<br>LINK: active</p>
-        </div>
+    <nav class="card hologram">
+      <h2>DIRECTORY</h2>
+      <div class="navDiv">
+        <ul>
+          <li><a class="chromatic nav-active" href="./">> root</a></li>
+          <li><a class="chromatic" href="intel/">> intel</a></li>
+          <li><a class="chromatic" href="logs/">> logs</a></li>
+          <li><a class="chromatic" href="experiment/">> experiment</a></li>
+        </ul>
+      </div>
+      <div class="nav-footer">
+        <p>
+          VISITORS: <span class="views terminal-cursor"></span>
+        </p>
+      </div>
+    </nav>
 
-        <div class="card wide-box">
-            <h2>NOW_PLAYING</h2>
-            <p>♪ Cyberia Mix - Track 01.mp3</p>
-            <div style="width: 100%; height: 5px; background: #004400; margin-top: 8px;">
-                <div style="width: 65%; height: 100%; background: #32ff32;"></div>
-            </div>
-        </div>
+    <main class="card distortion">
+      <div class="data-stream">
+        <div class="data-line">01001100 01000001 01001001 01001110</div>
+        <div class="data-line">GHOST::SHELL::PROTOCOL</div>
+        <div class="data-line">0xDEADBEEF 0xCAFEBABE</div>
+        <div class="data-line">AKIRA::NEO_TOKYO::2019</div>
+      </div>
+      <h2>LATEST_TRANSMISSION</h2>
+      <h3 id="title">placeholder title</h3>
+      <p id="date">current day</p>
+      <p id="content">placeholder text</p>
+      <a href="logs/" class="neon-pulse">[READ MORE...]</a>
+    </main>
 
-        <div class="card small-box">
-            <h2>RE-ALTY</h2>
-            <p>ERROR 404</p>
-        </div>
-
+    <div class="card wide-box hologram">
+      <h2>CURRENTLY_WATCHING</h2>
+      <div class="watch-list" id="watching-content"></div>
     </div>
 
+    <div class="card small-box noise">
+      <h2>ABOUT_ME.TXT</h2>
+      <p class="about-text" id="about-content"></p>
+    </div>
+
+    <div class="card small-box noise">
+      <h2>SYSTEM</h2>
+      <div class="system-card-body" id="system-content"></div>
+    </div>
+
+    <div class="card wide-box hologram">
+      <h2>INTERESTS</h2>
+      <div class="interests-list" id="interests-content"></div>
+    </div>
+
+    <div class="card small-box distortion">
+      <h2>MOOD.EXE</h2>
+      <p class="mood-text" id="mood-content"></p>
+    </div>
+
+    <div class="card noise footer-bar">
+      <span class="blink text-warning">⚠ UNDER CONSTRUCTION ⚠</span>
+      &nbsp;&nbsp; best viewed at 800x600 &nbsp;&nbsp;
+      <span class="text-dimmer">NO HOTLINKING &nbsp;|&nbsp; EST. MMXXVI &nbsp;|&nbsp; part of the NEO-KYOTO webring</span>
+      &nbsp;&nbsp; <span class="blink text-warning">⚠ UNDER CONSTRUCTION ⚠</span>
+    </div>
+
+  </div>
+  <script src="code/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      hitcount();
+      updateTimezoneSlider();
+      window.setInterval(updateTimezoneSlider, TIMEZONE_DELAY_MS);
+      initMatrixRain();
+      triggerRandomGlitch();
+      mainPageLog();
+      initProfile();
+    });
+  </script>
 </body>
+
 </html>

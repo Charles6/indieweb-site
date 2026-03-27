@@ -1,0 +1,103 @@
+{
+  "about": {
+    "handle": "pocketPerson",
+    "loc": "neo-Kyoto",
+    "status": "online",
+    "vibe": "shrooms+anime"
+  },
+  "watching": [
+    { 
+      "title": "Ghost in the Shell",
+      "bars": 9,
+      "label": "COMPLETE"
+    },
+    {
+      "title": "LAIN",
+      "bars": 10,
+      "label": "COMPLETE"
+    },
+    {
+      "title": "Bubblegum Crisis",
+      "bars": 6,
+      "label": "EP 8"
+    },
+    {
+      "title": "BABYLON 5",
+      "bars": 8,
+      "label": "S5 EP 4"
+    },
+    {
+      "title": "Akira",
+      "bars": 9,
+      "label": "COMPLETE",
+      "note": "watched high"
+    }
+  ],
+  "interests": [
+    {
+      "text": "cyberpunk",
+      "weight": 5
+    },
+    {
+      "text": "unix/linux",
+      "weight": 4
+    },
+    {
+      "text": "electronic music",
+      "weight": 3
+    },
+    {
+      "text": "anime/manga",
+      "weight": 5
+    },
+    {
+      "text": "aphex twin",
+      "weight": 3
+    },
+    {
+      "text": "joy division",
+      "weight": 4
+    },
+    {
+      "text": "crt screens",
+      "weight": 2
+    },
+    {
+      "text": "lain theory",
+      "weight": 5
+    },
+    {
+      "text": "questioning what is real",
+      "weight": 1
+    },
+    {
+      "text": "daft punk",
+      "weight": 5
+    },
+    {
+      "text": "retro games",
+      "weight": 4 },
+    {
+      "text": "ghost in the shell",
+      "weight": 5
+    },
+    {
+      "text": "neocities",
+      "weight": 2
+    }
+  ],
+  "mood": {
+    "status": "WIRED",
+    "quote": "i am not the ghost\nin the machine. i am\nthe machine haunting\nitself."
+  },
+  "system": [
+    { "label": "CPU",      "value": "98%",          "style": "vapor"   },
+    { "label": "MEM",      "value": "stable" ,        "style": "warning"                   },
+    { "label": "UPTIME",   "value": "∞"                                },
+    { "label": "LINK",     "value": "active"                           },
+    { "label": "SIGNAL",   "value": "clear"                            },
+    { "label": "SYNC",     "value": "wired" },
+    { "label": "GHOST",    "value": "detected",      "style": "accent"  },
+    { "label": "KERNEL",   "value": "haunted"      }
+  ]
+}

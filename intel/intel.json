@@ -1,0 +1,74 @@
+{
+  "dossier": {
+    "classification": "OPEN_SOURCE",
+    "threat_level": "NEGLIGIBLE",
+    "body": [
+      "A node in the wired. Operating somewhere in the noise between signal and silence.",
+      "This site exists because the internet used to feel like <em class=\"text-accent\">something</em>. Before the algorithms. Before the engagement metrics. Before every page looked the same and wanted the same things from you. When you could stumble across someone's hand-built corner of the web and feel like you'd actually found a real person in there.",
+      "I build things. I watch too much anime. I stay up too late reading theory I probably don't fully understand. I believe <span class=\"text-green\">Serial Experiments Lain</span> is the most important piece of media made in the 20th century and I will die on that hill.",
+      "This is my pocket dimension. A place that is mine in a way that rented space on a corporate platform never could be. You found it somehow. That means something."
+    ]
+  },
+  "skills": [
+    {
+      "name": "LINUX/UNIX",
+      "bars": 7,
+      "label": "proficient"
+    },
+    {
+      "name": "HTML/CSS",
+      "bars": 9,
+      "label": "tinkering"
+    },
+    {
+      "name": "JAVASCRIPT",
+      "bars": 5,
+      "label": "learning"
+    },
+    {
+      "name": "OVERTHINKING",
+      "bars": 10,
+      "label": "MAXED OUT",
+      "warning": true
+    },
+    {
+      "name": "ANIME LORE",
+      "bars": 9,
+      "label": "near mastery"
+    }
+  ],
+  "reading": {
+    "now": {
+      "title": "Wild Seed",
+      "author": "Octavia E. Butler"
+    },
+    "next": {
+      "title": "Neuromancer",
+      "author": "W. Gibson"
+    }
+  },
+  "signal": [
+    {
+      "label": "neocities",
+      "value": "pocketperson"
+    },
+    {
+      "label": "email",
+      "value": "[encrypted]"
+    }
+  ],
+  "philosophy": [
+    {
+      "quote": "No matter where you go, everyone's connected.",
+      "attribution": "Serial Experiments Lain"
+    },
+    {
+      "quote": "The net is vast and infinite.",
+      "attribution": "Ghost in the Shell"
+    },
+    {
+      "quote": "Wake the fuck up samurai, we’ve got a city to burn",
+      "attribution": "Cyberpunk 2077"
+    }
+  ]
+}

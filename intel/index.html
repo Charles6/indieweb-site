@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POCKET DIMENSION // INTEL</title>
+  <link href="../css/style.css" rel="stylesheet" type="text/css" media="all">
+  <link href="style.css" rel="stylesheet" type="text/css" media="all">
+</head>
+
+<body data-intel-path="intel.json" data-profile-path="../data.json">
+  <!-- Matrix Rain Background -->
+  <canvas id="matrix-canvas"></canvas>
+
+  <!-- CRT Monitor Effects -->
+  <div class="crt-overlay"></div>
+
+  <div class="bento-container">
+
+    <header class="card noise">
+      <h1
+        class="glitch neon-pulse"
+        data-text="PROTOCOL_WIRED // USER: pocketPerson"
+      >
+        PROTOCOL_WIRED // USER: pocketPerson
+      </h1>
+      <p class="status-bar">
+        LOC: NEO-KYOTO// STATUS: <span class="blink">SYNCING...</span>
+      </p>
+      <div class="timezone-class" id="timezone-container">
+        <!-- Timezones will be dynamically inserted here -->
+      </div>
+    </header>
+
+    <nav class="card hologram">
+      <h2>DIRECTORY</h2>
+      <div class="navDiv">
+        <ul>
+          <li><a class="chromatic" href="../">> root</a></li>
+          <li><a class="chromatic nav-active" href="../intel/">> intel</a></li>
+          <li><a class="chromatic" href="../logs/">> logs</a></li>
+          <li><a class="chromatic" href="../experiment/">> experiment</a></li>
+        </ul>
+      </div>
+      <div class="nav-footer">
+        <p>
+          VISITORS: <span class="views terminal-cursor"></span>
+        </p>
+      </div>
+    </nav>
+
+    <main class="card distortion">
+      <div class="data-stream">
+        <div class="data-line">SUBJECT::PROFILE // CLEARANCE: OPEN_SOURCE</div>
+        <div class="data-line">IDENTITY::UNVERIFIED // GHOST::DETECTED</div>
+        <div class="data-line">NODE: pocketPerson // WIRED: TRUE</div>
+      </div>
+      <h2>SUBJECT_DOSSIER</h2>
+      <p class="dossier-meta" id="dossier-meta"></p>
+      <div id="dossier-body"></div>
+    </main>
+
+    <div class="card wide-box noise">
+      <h2>SKILL_TREE</h2>
+      <div class="skill-list" id="skill-list"></div>
+    </div>
+
+    <div class="card wide-box hologram">
+      <h2>CURRENTLY_READING</h2>
+      <div class="reading-list" id="reading-list"></div>
+    </div>
+
+    <div class="card noise philosophy-card">
+      <h2>PHILOSOPHY.TXT</h2>
+      <div class="philosophy-content" id="philosophy-content"></div>
+    </div>
+
+    <div class="card small-box hologram">
+      <h2>SYSTEM</h2>
+      <div class="system-card-body" id="system-content"></div>
+    </div>
+
+    <div class="card noise footer-bar">
+      <span class="blink text-warning">⚠ UNDER CONSTRUCTION ⚠</span>
+      &nbsp;&nbsp; best viewed at 800x600 &nbsp;&nbsp;
+      <span class="text-dimmer">NO HOTLINKING &nbsp;|&nbsp; EST. MMXXVI &nbsp;|&nbsp; part of the NEO-KYOTO webring</span>
+      &nbsp;&nbsp; <span class="blink text-warning">⚠ UNDER CONSTRUCTION ⚠</span>
+    </div>
+
+  </div>
+  <script src="../code/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      hitcount();
+      updateTimezoneSlider();
+      window.setInterval(updateTimezoneSlider, TIMEZONE_DELAY_MS);
+      initMatrixRain();
+      triggerRandomGlitch();
+      initIntel();
+      initSystem();
+    });
+  </script>
+</body>
+
+</html>
