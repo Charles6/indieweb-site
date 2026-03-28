@@ -152,6 +152,9 @@ let floorStats = { kills: 0, damageTaken: 0, lowestHp: 20, fragmentFound: false 
 // chapterContexts[N] = floorStats snapshot used to prefix chapter N's text
 let chapterContexts = {};
 
+let turnCount = 0;
+const DETECTION_RANGE = 6;
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -202,6 +205,9 @@ const initGame = () => {
   secretDiscovered = false;
   floorStats = { kills: 0, damageTaken: 0, lowestHp: 20, fragmentFound: false };
   chapterContexts = {};
+  turnCount = 0;
+  const logEl = document.getElementById('log');
+  if (logEl) logEl.innerHTML = '';
   generateLevel();
   drawMap();
   updateStats();
@@ -363,26 +369,26 @@ const drawMap = () => {
     for (let x = 0; x < WIDTH; x++) {
       const key = `${x},${y}`;
       if (x === player.x && y === player.y) {
-        out += '<span style="color:#fff;font-weight:bold;">@</span>';
+        out += '<span style="color:#f0f;font-weight:bold;">@</span>';
       } else if (enemyAt[key]) {
-        out += '<span style="color:#f0f;font-weight:bold;">E</span>';
+        out += '<span style="color:#32ff32;font-weight:bold;">E</span>';
       } else if (itemAt[key]) {
         const item = itemAt[key];
         if (item.type === 'fragment') {
-          out += '<span style="color:#5fd7f5;font-weight:bold;">§</span>';
+          out += '<span style="color:#00ffff;font-weight:bold;">§</span>';
         } else if (item.type === 'portal') {
           out += '<span class="omega-tile">Ω</span>';
         } else {
-          out += '<span style="color:#ff0;">*</span>';
+          out += '<span style="color:#ffff00;">*</span>';
         }
       } else {
         const ch = map[y][x];
         if (ch === '#') {
-          out += '<span style="color:#333;">#</span>';
+          out += '<span style="color:#0d330d;">#</span>';
         } else if (ch === '>') {
-          out += '<span style="color:#f0f;font-weight:bold;">></span>';
+          out += '<span style="color:#32ff32;font-weight:bold;">></span>';
         } else {
-          out += '<span style="color:#555;">.</span>';
+          out += '<span style="color:#0d330d;">.</span>';
         }
       }
     }
@@ -431,7 +437,11 @@ const updateStats = () => {
 
 const log = (message) => {
   const el = document.getElementById('log');
-  if (el) el.innerText = message;
+  if (!el) return;
+  const line = document.createElement('div');
+  line.textContent = message;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
 };
 
 // ============================================================
@@ -562,6 +572,65 @@ const activatePortal = () => {
 };
 
 // ============================================================
+// ENEMY AI
+// ============================================================
+
+const DIRS = [{dx:0,dy:-1},{dx:0,dy:1},{dx:-1,dy:0},{dx:1,dy:0}];
+
+const enemyAttackPlayer = (enemy) => {
+  const dmg = 1 + Math.floor(Math.random() * 3);
+  player.hp -= dmg;
+  floorStats.damageTaken += dmg;
+  if (player.hp < floorStats.lowestHp) floorStats.lowestHp = player.hp;
+  log(`ENEMY STRIKES [${dmg} DMG] — HP: ${player.hp}/${player.maxHp}`);
+  if (player.hp <= 0) {
+    gameOver = true;
+    log(`> PROCESS TERMINATED — FLOOR ${floorLevel} — THE SIGNAL DROPS — THE GHOST DISSOLVES`);
+  }
+};
+
+const moveEnemies = () => {
+  const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`));
+
+  for (const enemy of enemies) {
+    const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
+
+    // Outside detection range: enemy is idle — player can sneak past
+    if (dist > DETECTION_RANGE) continue;
+
+    // Attack immediately if adjacent, regardless of turn throttle
+    if (dist === 1) {
+      enemyAttackPlayer(enemy);
+      if (gameOver) break;
+      continue;
+    }
+
+    // Enemies within range chase, but only move every other player turn
+    if (turnCount % 2 !== 0) continue;
+
+    const dirs = DIRS.slice().sort((a, b) => {
+      const da = Math.abs((enemy.x + a.dx) - player.x) + Math.abs((enemy.y + a.dy) - player.y);
+      const db = Math.abs((enemy.x + b.dx) - player.x) + Math.abs((enemy.y + b.dy) - player.y);
+      return da !== db ? da - db : Math.random() - 0.5;
+    });
+
+    for (const { dx, dy } of dirs) {
+      const nx = enemy.x + dx;
+      const ny = enemy.y + dy;
+      if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT) continue;
+      if (map[ny][nx] === '#') continue;
+      if (nx === player.x && ny === player.y) continue;
+      if (occupied.has(`${nx},${ny}`)) continue;
+      occupied.delete(`${enemy.x},${enemy.y}`);
+      enemy.x = nx;
+      enemy.y = ny;
+      occupied.add(`${nx},${ny}`);
+      break;
+    }
+  }
+};
+
+// ============================================================
 // INPUT
 // ============================================================
 
@@ -594,6 +663,8 @@ window.addEventListener('keydown', (event) => {
   }
   if (dx === 0 && dy === 0) return;
 
+  turnCount++;
+
   const tx = player.x + dx;
   const ty = player.y + dy;
   if (ty < 0 || ty >= HEIGHT || tx < 0 || tx >= WIDTH) return;
@@ -602,6 +673,7 @@ window.addEventListener('keydown', (event) => {
   const enemy = enemies.find((entry) => entry.x === tx && entry.y === ty);
   if (enemy) {
     attackEnemy(enemy);
+    moveEnemies();
     drawMap();
     updateStats();
     return;
@@ -644,6 +716,7 @@ window.addEventListener('keydown', (event) => {
     log(`YOU DESCEND TO FLOOR ${floorLevel}...`);
   }
 
+  moveEnemies();
   drawMap();
   updateStats();
 });
