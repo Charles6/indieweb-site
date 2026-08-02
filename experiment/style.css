@@ -64,10 +64,16 @@ header a:hover {
 .main-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 8px;
-  height: 60vh;
+  min-height: 60vh;
   max-width: 800px;
+  align-items: stretch;
+}
+
+.game-panel {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .story-panel {
@@ -107,7 +113,10 @@ header a:hover {
   line-height: 1;
   user-select: none;
   font-size: 0.9rem;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 10lh;
+  white-space: pre;
 }
 
 #log {
@@ -135,18 +144,32 @@ header a:hover {
 /* --- Help panel --- */
 
 .help-panel {
+  grid-column: 1;
+  grid-row: 2;
   border: 1px solid var(--green-dim);
-  padding: 6px 10px;
-  font-size: 0.68rem;
-  color: #555;
-  letter-spacing: 0.06em;
+  padding: 10px 12px;
+  font-size: 0.66rem;
+  color: #666;
+  letter-spacing: 0.05em;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px 8px;
-  max-height: 4rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 12px;
+  align-content: start;
+  background: rgba(0, 10, 0, 0.92);
+  box-shadow: inset 0 0 16px rgba(50, 255, 50, 0.06);
+  min-height: 5rem;
 }
 
-.help-panel span:not([class]) { color: var(--green); }
+.help-panel > div {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.help-panel span:not([class]) {
+  color: var(--green);
+  display: inline-block;
+  min-width: 2.2rem;
+}
 
 .help-player   { color: var(--magenta); font-weight: bold; }
 .help-stairs   { color: var(--green); font-weight: bold; }
@@ -244,6 +267,15 @@ header a:hover {
   .main-row {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
+  }
+  .game-panel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .help-panel {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .story-panel {
     grid-column: 1;

@@ -129,6 +129,9 @@ const HEIGHT = 18;
 const MAX_ROOMS = 8;
 const ROOM_MIN_SIZE = 4;
 const ROOM_MAX_SIZE = 8;
+const DETECTION_RANGE = 4;
+const SEARCH_TURNS = 4;
+const ENEMY_MOVE_DELAY = 2;
 
 // ============================================================
 // STATE
@@ -153,7 +156,6 @@ let floorStats = { kills: 0, damageTaken: 0, lowestHp: 20, fragmentFound: false 
 let chapterContexts = {};
 
 let turnCount = 0;
-const DETECTION_RANGE = 6;
 
 // ============================================================
 // HELPERS
@@ -189,6 +191,63 @@ const captureFloorStats = () => ({
   fragmentFound: floorStats.fragmentFound,
 });
 
+const getTileKey = (x, y) => `${x},${y}`;
+
+const hasWallBetween = (x1, y1, x2, y2) => {
+  if (x1 === x2) {
+    for (let y = Math.min(y1, y2) + 1; y < Math.max(y1, y2); y++) {
+      if (map[y][x1] === '#') return true;
+    }
+    return false;
+  }
+
+  if (y1 === y2) {
+    for (let x = Math.min(x1, x2) + 1; x < Math.max(x1, x2); x++) {
+      if (map[y1][x] === '#') return true;
+    }
+    return false;
+  }
+
+  return true;
+};
+
+const canEnemySensePlayer = (enemy) => {
+  const dx = Math.abs(enemy.x - player.x);
+  const dy = Math.abs(enemy.y - player.y);
+  const dist = dx + dy;
+
+  if (dist <= 1) return true;
+  if (dist > DETECTION_RANGE) return false;
+  if (dx <= 1 && dy <= 1) return true;
+
+  if ((enemy.x === player.x || enemy.y === player.y) && !hasWallBetween(enemy.x, enemy.y, player.x, player.y)) {
+    return true;
+  }
+
+  return dist <= 2;
+};
+
+const setEnemyAlert = (enemy, reason = 'PLAYER DETECTED') => {
+  if (enemy.state !== 'alert') {
+    log(`${reason} // HOSTILE PROCESS TRACKING YOUR SIGNAL`);
+  }
+
+  enemy.state = 'alert';
+  enemy.searchTurns = SEARCH_TURNS;
+  enemy.lastKnownPlayer = { x: player.x, y: player.y };
+};
+
+const alertNearbyEnemies = (x, y, radius = 3) => {
+  enemies.forEach((enemy) => {
+    const dist = Math.abs(enemy.x - x) + Math.abs(enemy.y - y);
+    if (dist <= radius) {
+      enemy.state = 'search';
+      enemy.searchTurns = SEARCH_TURNS - 1;
+      enemy.lastKnownPlayer = { x, y };
+    }
+  });
+};
+
 // ============================================================
 // INIT
 // ============================================================
@@ -212,7 +271,8 @@ const initGame = () => {
   drawMap();
   updateStats();
   renderStory(1);
-  log("SYSTEM READY. NEURAL LINK ESTABLISHED. YOU ARE JACKED IN AT PROTOCOL DEPTH ZERO. THE WIRED IS LISTENING. MOVE WITH ARROW KEYS. COLLECT FRAGMENTS. DO NOT LOSE YOURSELF.");
+  log("SYSTEM READY. NEURAL LINK ESTABLISHED. YOU ARE JACKED IN AT PROTOCOL DEPTH ZERO. THE WIRED IS LISTENING.");
+  log("ARROWS TO MOVE. '.' OR SPACE TO WAIT. 'S' TO SCAN. STAY QUIET AND SLIP PAST WHAT YOU CAN.");
 };
 
 // ============================================================
@@ -251,7 +311,16 @@ const generateLevel = () => {
 
     if (rooms.length > 0) {
       carveHallway(rooms[rooms.length - 1].cx, rooms[rooms.length - 1].cy, room.cx, room.cy);
-      enemies.push({ x: room.cx, y: room.cy, hp: 3 + floorLevel });
+      enemies.push({
+        x: room.cx,
+        y: room.cy,
+        hp: 3 + floorLevel,
+        state: 'idle',
+        searchTurns: 0,
+        cooldown: 0,
+        staggered: false,
+        lastKnownPlayer: null,
+      });
       if (Math.random() < 0.4) {
         items.push({ x: room.x1 + 1, y: room.y1 + 1, type: 'medpack' });
       }
@@ -288,6 +357,23 @@ const generateLevel = () => {
     }
   }
 
+  if (rooms.length >= 3 && floorLevel >= 2 && floorLevel <= 12 && Math.random() < 0.45) {
+    const terminalRoom = rooms[Math.floor(Math.random() * (rooms.length - 1))];
+    const tx = terminalRoom.cx;
+    const ty = terminalRoom.cy;
+    const occupied = items.some((item) => item.x === tx && item.y === ty);
+    const enemyOccupied = enemies.some((enemy) => enemy.x === tx && enemy.y === ty);
+
+    if (
+      map[ty][tx] !== '>' &&
+      !occupied &&
+      !enemyOccupied &&
+      (tx !== player.x || ty !== player.y)
+    ) {
+      items.push({ x: tx, y: ty, type: 'terminal' });
+    }
+  }
+
   floorStats = { kills: 0, damageTaken: 0, lowestHp: player.hp, fragmentFound: false };
 };
 
@@ -309,9 +395,17 @@ const carveHallway = (x1, y1, x2, y2) => {
 // RENDERING
 // ============================================================
 
+const SCREEN_WIDTH = 46;
+const screenLine = (text = '') => String(text).padEnd(SCREEN_WIDTH, ' ');
+const centeredLine = (text = '') => {
+  const raw = String(text);
+  const left = Math.max(Math.floor((SCREEN_WIDTH - raw.length) / 2), 0);
+  return `${' '.repeat(left)}${raw}`.padEnd(SCREEN_WIDTH, ' ');
+};
+
 const drawDeathScreen = () => {
-  const fl = String(floorLevel).padEnd(3);
-  const k = String(kills).padEnd(3);
+  const fl = String(floorLevel).padStart(2, '0');
+  const k = String(kills).padStart(2, '0');
   const fr = `${collectedFragments.size}/4`;
 
   const title = (text) => `<span style="color:#d40f9f;">${text}</span>`;
@@ -320,24 +414,24 @@ const drawDeathScreen = () => {
   const dim = (text) => `<span style="color:#222;">${text}</span>`;
 
   const lines = [
-    dim(`                                                  `),
-    title(`    . . . C O N N E C T I O N   L O S T . . .   `),
-    dim(`                                                  `),
-    body(`                   ( . )                         `),
-    body(`              _____|   |_____                     `),
-    body(`             /     |   |     \\                   `),
-    body(`    ________/      |   |      \\________          `),
-    body(`   |               |   |              |           `),
-    body(`   |_______________|   |______________|           `),
-    body(`                   |   |                          `),
-    body(`                  /|   |\\                        `),
-    body(`                 / |   | \\                       `),
-    body(`                /__|   |__\\                      `),
-    dim(`                                                  `),
-    stat(`     FLOOR ${fl} //  KILLS ${k} //  FRAGS ${fr}          `),
-    dim(`                                                  `),
-    stat(`               [ R ] TO RESTART                   `),
-    dim(`                                                  `),
+    dim(screenLine()),
+    title(centeredLine('. . . CONNECTION LOST . . .')),
+    dim(screenLine()),
+    body(centeredLine('_.-""""--._')),
+    body(centeredLine(' /  x  x   \\___')),
+    body(centeredLine('|     ^      _ \\__')),
+    body(centeredLine('|   \\___/   (_/ / /|')),
+    body(centeredLine(' \\         __ / /_/')),
+    body(centeredLine('  `-.____.-`  \\__  \\')),
+    body(centeredLine('      /|          \\_/')),
+    body(centeredLine('     / |   _   _')),
+    body(centeredLine('    /  |__/ |_/ |')),
+    body(centeredLine('   /___________/')),
+    dim(screenLine()),
+    stat(centeredLine(`FLOOR ${fl} // KILLS ${k} // FRAGS ${fr}`)),
+    dim(screenLine()),
+    stat(centeredLine('[ R ] TO RESTART')),
+    dim(screenLine()),
   ];
 
   document.getElementById('game-map').innerHTML = lines.join('\n');
@@ -356,28 +450,32 @@ const drawMap = () => {
 
   const enemyAt = {};
   enemies.forEach((enemy) => {
-    enemyAt[`${enemy.x},${enemy.y}`] = enemy;
+    enemyAt[getTileKey(enemy.x, enemy.y)] = enemy;
   });
 
   const itemAt = {};
   items.forEach((item) => {
-    itemAt[`${item.x},${item.y}`] = item;
+    itemAt[getTileKey(item.x, item.y)] = item;
   });
 
   let out = '';
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
-      const key = `${x},${y}`;
+      const key = getTileKey(x, y);
       if (x === player.x && y === player.y) {
         out += '<span style="color:#f0f;font-weight:bold;">@</span>';
       } else if (enemyAt[key]) {
-        out += '<span style="color:#32ff32;font-weight:bold;">E</span>';
+        const enemy = enemyAt[key];
+        const color = enemy.state === 'alert' ? '#f0f' : '#32ff32';
+        out += `<span style="color:${color};font-weight:bold;">E</span>`;
       } else if (itemAt[key]) {
         const item = itemAt[key];
         if (item.type === 'fragment') {
           out += '<span style="color:#00ffff;font-weight:bold;">§</span>';
         } else if (item.type === 'portal') {
           out += '<span class="omega-tile">Ω</span>';
+        } else if (item.type === 'terminal') {
+          out += '<span style="color:#5fd7f5;font-weight:bold;">T</span>';
         } else {
           out += '<span style="color:#ffff00;">*</span>';
         }
@@ -399,23 +497,23 @@ const drawMap = () => {
 };
 
 const drawWinScreen = () => {
-  const pad = (text) => String(text).padEnd(22);
+  const frame = (text = '') => `    ║ ${String(text).padEnd(36, ' ')} ║`;
   const lines = [
-    '',
+    screenLine(),
     '    ╔══════════════════════════════════════╗',
-    '    ║     GHOST_PROTOCOL :: COMPLETE       ║',
+    frame('GHOST_PROTOCOL :: COMPLETE'),
     '    ╠══════════════════════════════════════╣',
-    '    ║  DEPTH REACHED  : FLOOR 13           ║',
-    `    ║  KILLS          : ${pad(kills)}║`,
-    `    ║  FRAGMENTS      : ${pad(`${collectedFragments.size}/4`)}║`,
-    `    ║  INTEGRITY      : ${pad(getIntegrityBar())}║`,
-    `    ║  PATH           : ${pad((currentBranch || 'UNKNOWN').toUpperCase())}║`,
+    frame('DEPTH REACHED  : FLOOR 13'),
+    frame(`KILLS          : ${kills}`),
+    frame(`FRAGMENTS      : ${collectedFragments.size}/4`),
+    frame(`INTEGRITY      : ${getIntegrityBar()}`),
+    frame(`PATH           : ${(currentBranch || 'UNKNOWN').toUpperCase()}`),
     '    ╠══════════════════════════════════════╣',
-    '    ║  you went all the way down.          ║',
-    '    ║  you found what was there.           ║',
+    frame('you went all the way down.'),
+    frame('you found what was there.'),
     '    ╚══════════════════════════════════════╝',
-    '',
-    '              [R] TO RESTART',
+    screenLine(),
+    centeredLine('[R] TO RESTART'),
   ];
 
   document.getElementById('game-map').innerHTML =
@@ -515,6 +613,8 @@ const renderStory = (currentFloor) => {
 const attackEnemy = (enemy) => {
   const dmg = 2 + Math.floor(Math.random() * 3);
   enemy.hp -= dmg;
+  setEnemyAlert(enemy, 'HOSTILE PROCESS TAGGED');
+  alertNearbyEnemies(enemy.x, enemy.y);
 
   if (enemy.hp <= 0) {
     enemies = enemies.filter((entry) => entry !== enemy);
@@ -529,16 +629,8 @@ const attackEnemy = (enemy) => {
       log(`Enemy destroyed [${dmg} DMG]. KILLS: ${kills}`);
     }
   } else {
-    const ret = 1 + Math.floor(Math.random() * 3);
-    player.hp -= ret;
-    floorStats.damageTaken += ret;
-    if (player.hp < floorStats.lowestHp) floorStats.lowestHp = player.hp;
-    log(`HIT [${dmg} DMG] — retaliation [${ret} DMG] — enemy HP: ${enemy.hp}`);
-
-    if (player.hp <= 0) {
-      gameOver = true;
-      log(`> PROCESS TERMINATED — FLOOR ${floorLevel} — THE SIGNAL DROPS — THE GHOST DISSOLVES`);
-    }
+    enemy.staggered = true;
+    log(`HIT [${dmg} DMG] — enemy destabilized — enemy HP: ${enemy.hp}`);
   }
 };
 
@@ -562,6 +654,44 @@ const pickupFragment = (item) => {
   renderStory(floorLevel);
 };
 
+const useTerminal = (item) => {
+  items = items.filter((entry) => entry !== item);
+
+  const events = [
+    () => {
+      integrity = clamp(integrity + 8, 0, 100);
+      log('[ MAINTENANCE TERMINAL ] LOCAL SIGNAL STABILIZED. INTEGRITY +8.');
+    },
+    () => {
+      player.hp = Math.min(player.maxHp, player.hp + 5);
+      log('[ MEDICAL CACHE ] OLD SYSTEMS STILL REMEMBER HOW TO REPAIR. +5 HP.');
+    },
+    () => {
+      enemies.forEach((enemy) => {
+        if (Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y) <= 5) {
+          enemy.state = 'idle';
+          enemy.searchTurns = 0;
+          enemy.lastKnownPlayer = null;
+        }
+      });
+      log('[ SPOOFED CREDENTIALS ] LOCAL HOSTILES LOSE LOCK ON YOUR SIGNAL.');
+    },
+    () => {
+      const fragment = FRAGMENT_DATA.find((entry) =>
+        entry.floor >= floorLevel &&
+        !collectedFragments.has(entry.id)
+      );
+      if (fragment) {
+        log(`[ TRACE ROUTE ] FRAGMENT SIGNATURE DETECTED BELOW OR ON THIS FLOOR: ${fragment.id.toUpperCase()}.`);
+      } else {
+        log('[ TRACE ROUTE ] NO UNCLAIMED FRAGMENTS DETECTED IN LOCAL DEPTH BANDS.');
+      }
+    },
+  ];
+
+  pick(events)();
+};
+
 const activatePortal = () => {
   secretDiscovered = true;
   chapterContexts[floorLevel + 1] = captureFloorStats();
@@ -578,10 +708,16 @@ const activatePortal = () => {
 const DIRS = [{dx:0,dy:-1},{dx:0,dy:1},{dx:-1,dy:0},{dx:1,dy:0}];
 
 const enemyAttackPlayer = (enemy) => {
+  if (enemy.cooldown > 0) {
+    enemy.cooldown--;
+    return;
+  }
+
   const dmg = 1 + Math.floor(Math.random() * 3);
   player.hp -= dmg;
   floorStats.damageTaken += dmg;
   if (player.hp < floorStats.lowestHp) floorStats.lowestHp = player.hp;
+  enemy.cooldown = 1;
   log(`ENEMY STRIKES [${dmg} DMG] — HP: ${player.hp}/${player.maxHp}`);
   if (player.hp <= 0) {
     gameOver = true;
@@ -590,27 +726,64 @@ const enemyAttackPlayer = (enemy) => {
 };
 
 const moveEnemies = () => {
-  const occupied = new Set(enemies.map((e) => `${e.x},${e.y}`));
+  const occupied = new Set(enemies.map((e) => getTileKey(e.x, e.y)));
 
   for (const enemy of enemies) {
+    if (enemy.staggered) {
+      enemy.staggered = false;
+      continue;
+    }
+
     const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
+    const seesPlayer = canEnemySensePlayer(enemy);
 
-    // Outside detection range: enemy is idle — player can sneak past
-    if (dist > DETECTION_RANGE) continue;
+    if (seesPlayer) {
+      setEnemyAlert(enemy);
+    } else if (enemy.state === 'alert' || enemy.state === 'search') {
+      enemy.state = 'search';
+      enemy.searchTurns = Math.max((enemy.searchTurns || 0) - 1, 0);
+      if (enemy.searchTurns === 0) {
+        enemy.state = 'idle';
+        enemy.lastKnownPlayer = null;
+      }
+    }
 
-    // Attack immediately if adjacent, regardless of turn throttle
-    if (dist === 1) {
+    if (enemy.state === 'idle') {
+      if (Math.random() < 0.15 && turnCount % ENEMY_MOVE_DELAY === 0) {
+        const wanderOptions = DIRS
+          .map(({ dx, dy }) => ({ x: enemy.x + dx, y: enemy.y + dy }))
+          .filter(({ x, y }) =>
+            x >= 0 &&
+            x < WIDTH &&
+            y >= 0 &&
+            y < HEIGHT &&
+            map[y][x] !== '#' &&
+            !occupied.has(getTileKey(x, y)) &&
+            (x !== player.x || y !== player.y)
+          );
+        const next = pick(wanderOptions);
+        if (next) {
+          occupied.delete(getTileKey(enemy.x, enemy.y));
+          enemy.x = next.x;
+          enemy.y = next.y;
+          occupied.add(getTileKey(enemy.x, enemy.y));
+        }
+      }
+      continue;
+    }
+
+    if (dist === 1 && enemy.state === 'alert') {
       enemyAttackPlayer(enemy);
       if (gameOver) break;
       continue;
     }
 
-    // Enemies within range chase, but only move every other player turn
-    if (turnCount % 2 !== 0) continue;
+    if (turnCount % ENEMY_MOVE_DELAY !== 0) continue;
 
+    const target = enemy.lastKnownPlayer || player;
     const dirs = DIRS.slice().sort((a, b) => {
-      const da = Math.abs((enemy.x + a.dx) - player.x) + Math.abs((enemy.y + a.dy) - player.y);
-      const db = Math.abs((enemy.x + b.dx) - player.x) + Math.abs((enemy.y + b.dy) - player.y);
+      const da = Math.abs((enemy.x + a.dx) - target.x) + Math.abs((enemy.y + a.dy) - target.y);
+      const db = Math.abs((enemy.x + b.dx) - target.x) + Math.abs((enemy.y + b.dy) - target.y);
       return da !== db ? da - db : Math.random() - 0.5;
     });
 
@@ -620,14 +793,55 @@ const moveEnemies = () => {
       if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT) continue;
       if (map[ny][nx] === '#') continue;
       if (nx === player.x && ny === player.y) continue;
-      if (occupied.has(`${nx},${ny}`)) continue;
-      occupied.delete(`${enemy.x},${enemy.y}`);
+      if (occupied.has(getTileKey(nx, ny))) continue;
+      occupied.delete(getTileKey(enemy.x, enemy.y));
       enemy.x = nx;
       enemy.y = ny;
-      occupied.add(`${nx},${ny}`);
+      occupied.add(getTileKey(nx, ny));
       break;
     }
   }
+};
+
+const inspectNearby = () => {
+  const nearbyEnemy = enemies
+    .map((enemy) => ({
+      enemy,
+      dist: Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y),
+    }))
+    .filter(({ dist }) => dist <= 4)
+    .sort((a, b) => a.dist - b.dist)[0];
+
+  if (nearbyEnemy) {
+    const moodMap = {
+      idle: 'dormant',
+      search: 'searching',
+      alert: 'locked on',
+    };
+    log(`SCAN: HOSTILE PROCESS ${moodMap[nearbyEnemy.enemy.state] || nearbyEnemy.enemy.state} // RANGE ${nearbyEnemy.dist}`);
+    return;
+  }
+
+  const nearbyItem = items
+    .map((item) => ({
+      item,
+      dist: Math.abs(item.x - player.x) + Math.abs(item.y - player.y),
+    }))
+    .filter(({ dist }) => dist <= 5)
+    .sort((a, b) => a.dist - b.dist)[0];
+
+  if (nearbyItem) {
+    const labelMap = {
+      medpack: 'MEDPACK',
+      fragment: 'FRAGMENT SIGNATURE',
+      portal: 'OMEGA PORTAL',
+      terminal: 'ABANDONED TERMINAL',
+    };
+    log(`SCAN: ${labelMap[nearbyItem.item.type] || 'UNKNOWN OBJECT'} DETECTED // RANGE ${nearbyItem.dist}`);
+    return;
+  }
+
+  log('SCAN: NO IMMEDIATE HOSTILES OR SIGNAL ANOMALIES DETECTED.');
 };
 
 // ============================================================
@@ -640,10 +854,16 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
+  if (event.key === 's' || event.key === 'S') {
+    if (!gameOver && !gameWon) inspectNearby();
+    return;
+  }
+
   if (gameOver || gameWon) return;
 
   let dx = 0;
   let dy = 0;
+  let consumeTurn = false;
 
   if (event.key === 'ArrowUp') {
     dy = -1;
@@ -661,9 +881,21 @@ window.addEventListener('keydown', (event) => {
     dx = 1;
     event.preventDefault();
   }
-  if (dx === 0 && dy === 0) return;
+  if (event.key === '.' || event.key === ' ') {
+    consumeTurn = true;
+    event.preventDefault();
+  }
+  if (dx === 0 && dy === 0 && !consumeTurn) return;
 
   turnCount++;
+
+  if (consumeTurn) {
+    log('YOU HOLD POSITION AND LISTEN TO THE SYSTEM BREATHE.');
+    moveEnemies();
+    drawMap();
+    updateStats();
+    return;
+  }
 
   const tx = player.x + dx;
   const ty = player.y + dy;
@@ -688,6 +920,8 @@ window.addEventListener('keydown', (event) => {
       pickupMedpack(item);
     } else if (item.type === 'fragment') {
       pickupFragment(item);
+    } else if (item.type === 'terminal') {
+      useTerminal(item);
     } else if (item.type === 'portal') {
       activatePortal();
       drawMap();
